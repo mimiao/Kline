@@ -73,42 +73,8 @@
         this.width = arguments[6]? arguments[6]:0;
     		
     
-    	}
-    /*! @abstract  画单个K线柱
-		 @param drawContext		 画布
-		 @param heightPricePoint 最高价格位置
-		 @param heightPricePoint 最高价格位置
-		 @param heightPricePoint 最高价格位置
-		 @param heightPricePoint 最高价格位置
-		 @param color			 柱子颜色
-	*/
-		function drawKline( drawContext,heightPricePoint,lowPricePoint,openPricePoint,closePricePoint,color)
-		{
-			var width = (heightPricePoint.x - openPricePoint.x) * 2;
-			
-			//最高价到最低价之间的线条
-			drawContext.beginPath();
-			drawContext.lineWidth = 1.0;
-			drawContext.moveTo(lowPricePoint.x,lowPricePoint.y);
-			drawContext.lineTo(heightPricePoint.x,heightPricePoint.y);
-			drawContext.closePath();
-			drawContext.strokeStyle = color;
-			drawContext.stroke();
-			
-			//开盘价与收盘价封闭区域
-			drawContext.beginPath();
-			drawContext.moveTo(openPricePoint.x,openPricePoint.y);
-			drawContext.lineTo(openPricePoint.x,closePricePoint.y);
-			drawContext.lineTo(openPricePoint.x + width,closePricePoint.y);
-			drawContext.lineTo(openPricePoint.x + width,openPricePoint.y);
-			drawContext.closePath();
-			drawContext.fillStyle = color;
-			drawContext.strokeStyle = color;
-			drawContext.stroke();
-			drawContext.fill();
-			
-	
-		}
+	}
+
 		
     /*! @abstract  画k线柱
      *@param priceDatas  Array <klineNode>
@@ -136,7 +102,6 @@
      		 {
      		 	minPriceNode = priceDatas[i+1];
      		 }
-
      	}
   	
      	maxPrice =  maxPriceNode.heightPrice;
@@ -145,210 +110,294 @@
         var topPoint = new KlinePoint(edge.left,0);
         var bottomPoint = new KlinePoint(0,0);
         var heightPoint = new KlinePoint(0,0);
-        	var lowPoint = new KlinePoint(0,0);
+		var lowPoint = new KlinePoint(0,0);
         	
-        	//除去边缘画布高度
-        	var canvasVisbleHeight = canvasHeight-edge.top-edge.bottom;
+		//除去边缘画布高度
+		var canvasVisbleHeight = canvasHeight-edge.top-edge.bottom;
         	
-        	//单位价格在canvasVisbleHeight中所占的高度
-        	var priceUnitH =  canvasVisbleHeight/(maxPrice - minPrice);
+		//单位价格在canvasVisbleHeight中所占的高度
+		var priceUnitH =  canvasVisbleHeight/(maxPrice - minPrice);
         	
         for(var i=0;i<priceDatas.length;i++)
         {
 
-        		var klineNode = priceDatas[i];
-        		topPoint.y =  edge.top + canvasVisbleHeight - (klineNode.topPrice - minPrice)*priceUnitH;
+			var klineNode = priceDatas[i];
+			topPoint.y =  edge.top + canvasVisbleHeight - (klineNode.topPrice - minPrice)*priceUnitH;
 
-        		bottomPoint.x = topPoint.x;
-        		bottomPoint.y =  edge.top + canvasVisbleHeight - (klineNode.bottomPrice - minPrice)*priceUnitH;
-       	
-        		heightPoint.x = topPoint.x+ klineNode.width/2.0;
-        		heightPoint.y = edge.top + canvasVisbleHeight - (klineNode.heightPrice - minPrice)*priceUnitH;
+			bottomPoint.x = topPoint.x;
+			bottomPoint.y =  edge.top + canvasVisbleHeight - (klineNode.bottomPrice - minPrice)*priceUnitH;
+			heightPoint.x = topPoint.x+ klineNode.width/2.0;
+			heightPoint.y = edge.top + canvasVisbleHeight - (klineNode.heightPrice - minPrice)*priceUnitH;
         	
-        		lowPoint.x = heightPoint.x;
-        		lowPoint.y = edge.top + canvasVisbleHeight - (klineNode.lowPrice - minPrice)*priceUnitH;
+			lowPoint.x = heightPoint.x;
+			lowPoint.y = edge.top + canvasVisbleHeight - (klineNode.lowPrice - minPrice)*priceUnitH;
 			
-			    drawKline(drawContext,heightPoint,lowPoint,topPoint,bottomPoint,klineNode.color);
-			
-			    topPoint.x += (klineNode.width+space);
+			drawKline(drawContext,heightPoint,lowPoint,topPoint,bottomPoint,klineNode.color);
+			topPoint.x += (klineNode.width+space);
         }
     }
     </script>
     
     <!--十字线-->
-    <script>
+	<script> /*! @abstract 根据触摸点定位k线柱
+	 @param touchePoint 触摸点
+	 @param 当前绘制屏幕中的所有可视k线柱
+	 @param 绘制边缘
+	 @param kLine宽度
+	 @param Kline与Kline之间的间隙
+	 @return 触摸点对应的K线柱索引,从0开始
+	 */
+	function findKLineNode(touchePoint, klineNodes, drawEdge, klineWidth, space)
+	{
+		//left + right + n*klineW+(n-1)*space // n*(klineW+space)-space + left
+		var index = (touchePoint.x - drawEdge.left + space) / (klineWidth + space);
+		if (index < 0)
+		{
+			return -1;
+		}
+		index = parseInt(index);
+		return index < klineNodes.length ? index : -1;
+	}
 
 
-        /*! @abstract 根据触摸点定位k线柱
-           @param touchePoint 触摸点
-           @param 当前绘制屏幕中的所有可视k线柱
-           @param 绘制边缘
-           @param kLine宽度
-           @param Kline与Kline之间的间隙
-           @return 触摸点对应的K线柱索引,从0开始
-        */
-        function findKLineNode(touchePoint,klineNodes,drawEdge,klineWidth,space)
-        {
-            //left + right + n*klineW+(n-1)*space
-            // n*(klineW+space)-space + left
-            var index = (touchePoint.x - drawEdge.left +space)/(klineWidth+space);
-            if(index<0)
-            {
-                return -1 ;
-            }
-            index = parseInt(index);
-            return index<klineNodes.length?index:-1;
-        }
+	//画线
+	function drawLine(context, startPoint, endPoint, lineColor)
+	{
+		context.beginPath();
+		context.moveTo(startPoint.x, startPoint.y);
+		context.lineTo(endPoint.x, endPoint.y);
+		context.strokeStyle = "white";
+		context.lineWidth = "1px";
+		context.closePath();
+		context.stroke();
+	}
+
+	function drawCross(canvas, touchePoint)
+	{
+		var edge = new Edgeinsets(20, 50, 20, 0);
+		touchePoint = touchePoint2KLineCenter(touchePoint, g_index, 20, edge, 4);
+		var context = canvas.getContext("2d");
+		var width = canvas.width;
+		var height = canvas.height;
+		context.clearRect(0, 0, width, height);
+		var lineColor = "red";
+
+		//水平十字线
+		var hLineStartPoint = new KlinePoint(0, touchePoint.y);
+		var hLineEndPoint = new KlinePoint(width, touchePoint.y);
+		drawLine(context, hLineStartPoint, hLineEndPoint, lineColor);
+
+		//垂直十字线
+		var vLineStartPoint = new KlinePoint(touchePoint.x, 0);
+		var vLineEndPoint = new KlinePoint(touchePoint.x, height);
+		drawLine(context, vLineStartPoint, vLineEndPoint, lineColor);
+		return touchePoint;
+	}
 
 
+	function KLineDrawObject(canvas, edge, kLineWidht, space)
+	{
 
-
-        //画线
-    	function drawLine(context,startPoint,endPoint,lineColor)
-    	{
-
-    		context.beginPath();
-    		context.moveTo(startPoint.x,startPoint.y);
-    		context.lineTo(endPoint.x,endPoint.y);
-    		context.strokeStyle = "white";
-            context.lineWidth = "1px";
-    		context.closePath();
-    		context.stroke();
-
-    	}
-
-
-
-    	function drawCross(canvas,touchePoint)
-    	{
-
-            var edge = new Edgeinsets(20,50,20,0);
-            touchePoint = touchePoint2KLineCenter(touchePoint,g_index,20,edge,4);
-
-
-            var context = canvas.getContext("2d");
-
-            var width=canvas.width;
-            var height = canvas.height;
-            context.clearRect(0,0,width,height);
-            var lineColor = "red";
-
-    		//水平十字线
-    		var hLineStartPoint = new KlinePoint(0,touchePoint.y);
-    		var hLineEndPoint =  new  KlinePoint(width,touchePoint.y);
-    		drawLine(context,hLineStartPoint,hLineEndPoint,lineColor);
-
-    		//垂直十字线
-    		var vLineStartPoint = new KlinePoint(touchePoint.x,0);
-    		var vLineEndPoint = new  KlinePoint(touchePoint.x,height);
-    		drawLine(context,vLineStartPoint,vLineEndPoint,lineColor);
-
-    		return touchePoint;
-    		
-    	}
+		var _this = this;
+		this.maxHeightPoint = null;
+		this.minilowPoint = null;
+		this.canvas = canvas;
+		this.drawEdge = edge;
+		this.space = space;
+		this.priceDatas = null;
+		this.currentContext = canvas.getContext("2d");
 
 
 
+		/*! @abstract  画单个K线柱
+		 @param drawContext		 画布
+		 @param heightPricePoint 最高价格位置
+		 @param heightPricePoint 最高价格位置
+		 @param heightPricePoint 最高价格位置
+		 @param heightPricePoint 最高价格位置
+		 @param color			 柱子颜色
+		 */
+		function drawKline( drawContext,heightPricePoint,lowPricePoint,openPricePoint,closePricePoint,color)
+		{
+			var width = (heightPricePoint.x - openPricePoint.x) * 2;
+
+			//最高价到最低价之间的线条
+			drawContext.beginPath();
+			drawContext.lineWidth = 1.0;
+			drawContext.moveTo(lowPricePoint.x,lowPricePoint.y);
+			drawContext.lineTo(heightPricePoint.x,heightPricePoint.y);
+			drawContext.closePath();
+			drawContext.strokeStyle = color;
+			drawContext.stroke();
+
+			//开盘价与收盘价封闭区域
+			drawContext.beginPath();
+			drawContext.moveTo(openPricePoint.x,openPricePoint.y);
+			drawContext.lineTo(openPricePoint.x,closePricePoint.y);
+			drawContext.lineTo(openPricePoint.x + width,closePricePoint.y);
+			drawContext.lineTo(openPricePoint.x + width,openPricePoint.y);
+			drawContext.closePath();
+			drawContext.fillStyle = color;
+			drawContext.strokeStyle = color;
+			drawContext.stroke();
+			drawContext.fill();
 
 
-    </script>
+		}
 
-    
-   <!--鼠标事件-->
-   <script>
+		//price2Y
 
-     /*! @abstract 获取toucheEvent对应的坐标点
-      *@param toucheEvent 鼠标事件
-      * @return KLinePoint
-      * @see KlinePoint
-      */
+		function  price2Y(price,maxPrice,minPrice)
+		{
+			//除去边缘画布高度
+			var canvasVisbleHeight = _this.canvas.height - _this.drawEdge.top - _this.drawEdge.bottom;
+			//单位价格在canvasVisbleHeight中所占的高度
+			var priceUnitH = canvasVisbleHeight / (maxPrice - minPrice);
+			return _this.drawEdge.top + canvasVisbleHeight - ( price - minPrice) * priceUnitH;
+		}
 
-     function locationPointInEvent(toucheEvent)
-     {
-         var rect = toucheEvent.currentTarget.getBoundingClientRect();
-         return new KlinePoint(toucheEvent.clientX-rect.left,toucheEvent.clientY-rect.top);
-     }
+		/*! @abstract  画k线柱
+		 *@param priceDatas  Array <klineNode>
+		 */
+		this.updateKline = function (priceDatas)
+		{
 
-     function  touchePoint2KLineCenter(touchePoint,index,kLineWidth,edge,space)
-     {
-        return new KlinePoint(edge.left+(index+1)*kLineWidth+(index*space)-kLineWidth/2,touchePoint.y);
+			this.currentContext.clearRect(0,0,this.canvas.width,this.canvas.height);
+			this.priceDatas = priceDatas;
 
-     }
+			//得到最小值与最大值
+			var maxPriceNode = priceDatas[0];
+			var minPriceNode = priceDatas[0];
+			var maxPrice = 0;
+			var minPrice = 0;
+			for (var i = 0; i < priceDatas.length - 1; i++)
+			{
+				//最大值
+				if (maxPriceNode.heightPrice < priceDatas[i + 1].heightPrice)
+				{
+					maxPriceNode = priceDatas[i + 1];
+				}
 
-   	//begin
-     var  g_isClick = false;
-	 var  g_lastTouchePoint = null;
-     var  g_index = 0;
+				//最小值
+				if (minPriceNode.lowPrice > priceDatas[i + 1].lowPrice) {
+					minPriceNode = priceDatas[i + 1];
+				}
 
-   	function onMouseDown(event)
-   	{
+			}
 
-        g_isClick=!g_isClick;
-        if(g_isClick)
-        {
-            var touchePoint = locationPointInEvent(event);
+			maxPrice = maxPriceNode.heightPrice;
+			minPrice = minPriceNode.lowPrice;
 
-            var edge =new Edgeinsets(20,50,20,0);
-            g_index = findKLineNode(touchePoint,g_priceDatas,edge,20,4);
-            g_index = g_index<0?g_priceDatas.length/2:g_index;
-            g_lastTouchePoint = drawCross(event.currentTarget, touchePoint);
-        }
-        else
-        {
-            var canvas = event.currentTarget;
-            canvas.getContext("2d").clearRect(0,0,canvas.width,canvas.height);
-        }
-   	}
-   	
-   	//move
-    function onMouseMove(event)
-   	{
-        if(!g_isClick)
-        {
-            return;
-        }
+			var topPoint = new KlinePoint(edge.left, 0);
+			var bottomPoint = new KlinePoint(0, 0);
+			var heightPoint = new KlinePoint(0, 0);
+			var lowPoint = new KlinePoint(0, 0);
 
-        var touchePoint = locationPointInEvent(event);
+			for (var i = 0; i < priceDatas.length; i++)
+			{
+				var klineNode = priceDatas[i];
+				topPoint.y = price2Y(klineNode.topPrice,maxPrice,minPrice);
 
-        //水平移动
-        var offsetX =12;
-        var offsetY = 0;
-		 if(Math.abs(touchePoint.x-g_lastTouchePoint.x)>offsetX)
-         {
-             if(Math.abs(touchePoint.x-g_lastTouchePoint.x) > Math.abs(touchePoint.y - g_lastTouchePoint.y))
-             {
+				bottomPoint.x = topPoint.x;
+				bottomPoint.y = price2Y(klineNode.bottomPrice,maxPrice,minPrice);
 
-                 if(touchePoint.x>g_lastTouchePoint.x) //向右移动
-                 {
-                     g_index = g_index++<g_priceDatas.length-1?g_index:g_index-1;
-                 }
-                 else if (touchePoint.x<g_lastTouchePoint.x)//向左移动
-                 {
-                     g_index =g_index-->1?g_index:0;
-                 }
-                 g_lastTouchePoint = drawCross(event.currentTarget,touchePoint);
+				heightPoint.x = topPoint.x + klineNode.width / 2.0;
+				heightPoint.y = price2Y(klineNode.heightPrice,maxPrice,minPrice);
 
-             }
+				lowPoint.x = heightPoint.x;
+				lowPoint.y = price2Y(klineNode.lowPrice,maxPrice,minPrice);
+				drawKline(this.currentContext, heightPoint, lowPoint, topPoint, bottomPoint, klineNode.color);
+				topPoint.x += (klineNode.width + this.space);
+			}
+		}
 
-		 }
-		 else if(Math.abs(touchePoint.x-g_lastTouchePoint.x) < Math.abs(touchePoint.y - g_lastTouchePoint.y))
-		 {
-             touchePoint.x =g_lastTouchePoint.x;
-             g_lastTouchePoint = drawCross(event.currentTarget,touchePoint);
+	}
+	/*! @abstract 获取toucheEvent对应的坐标点
+	 *@param toucheEvent 鼠标事件
+	 * @return KLinePoint
+	 * @see KlinePoint
+	 */
 
-		 }
+	function locationPointInEvent(toucheEvent)
+	{
+		var rect = toucheEvent.currentTarget.getBoundingClientRect();
+		return new KlinePoint(toucheEvent.clientX - rect.left, toucheEvent.clientY - rect.top);
+	}
 
-   	}
-   	
-   	//end
-    function onMouseUp(event)
-   	{
+	function touchePoint2KLineCenter(touchePoint, index, kLineWidth, edge, space)
+	{
+		return new KlinePoint(edge.left + (index + 1) * kLineWidth + (index * space) - kLineWidth / 2, touchePoint.y);
+
+	}
 
 
+	var g_isClick = false;
+	var g_lastTouchePoint = null;
+	var g_index = 0;
 
-     }
-   </script>
-    
+	//begin
+	function onMouseDown(event)
+	{
+		g_isClick = !g_isClick;
+		if (g_isClick)
+		{
+			var touchePoint = locationPointInEvent(event);
+			var edge = new Edgeinsets(20, 50, 20, 0);
+			g_index = findKLineNode(touchePoint, g_priceDatas, edge, 20, 4);
+			g_index = g_index < 0 ? g_priceDatas.length / 2 : g_index;
+			g_lastTouchePoint = drawCross(event.currentTarget, touchePoint);
+		}
+		else
+		{
+			var canvas = event.currentTarget;
+			canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+		}
+	}
+
+	//move
+	function onMouseMove(event)
+	{
+		if (!g_isClick)
+		{
+			return;
+		}
+		var touchePoint = locationPointInEvent(event);
+
+		//水平移动
+		var offsetX = 12;
+		var offsetY = 0;
+		if (Math.abs(touchePoint.x - g_lastTouchePoint.x) > offsetX)
+		{
+			//左右滑动
+			if (Math.abs(touchePoint.x - g_lastTouchePoint.x) > Math.abs(touchePoint.y - g_lastTouchePoint.y))
+			{
+				if (touchePoint.x > g_lastTouchePoint.x) //向右移动
+				{
+					g_index = g_index++ < g_priceDatas.length - 1 ? g_index : g_index - 1;
+				}
+				else if (touchePoint.x < g_lastTouchePoint.x)//向左移动
+				{
+					g_index = g_index-- > 1 ? g_index : 0;
+				}
+				g_lastTouchePoint = drawCross(event.currentTarget, touchePoint);
+			}
+		}//上下滑动
+		else if (Math.abs(touchePoint.x - g_lastTouchePoint.x) < Math.abs(touchePoint.y - g_lastTouchePoint.y))
+		{
+			touchePoint.x = g_lastTouchePoint.x;
+			//对y进行限制
+			g_lastTouchePoint = drawCross(event.currentTarget, touchePoint);
+		}
+	}
+
+	//end
+	function onMouseUp(event)
+	{
+
+
+	}
+	</script>
+
 
 </head>
 
@@ -366,7 +415,7 @@
     //Kline 
     	var klineCanvas = document.getElementById("klineContext");
         klineCanvas.width = screen.width;
-        klineCanvas.height = 200;
+        klineCanvas.height = 500;
     	var klineContext = klineCanvas.getContext("2d");
 
     	//Cross
@@ -420,7 +469,10 @@
 			}
 			g_priceDatas = priceDatas;
 			var edge = new Edgeinsets(20,50,20,0);//top=10,left=5,bottom=10,right=0
-	 		drawklines(klineContext,priceDatas,klineCanvas.height,edge,4);
+	 		//drawklines(klineContext,priceDatas,klineCanvas.height,edge,4);
+			var drawKlinesObject = new KLineDrawObject(klineCanvas,edge,20,4);
+			drawKlinesObject.updateKline(priceDatas);
+
 		})
     	}
     	else
