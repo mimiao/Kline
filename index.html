@@ -298,8 +298,8 @@
 		{
 			var touchePoint = locationPointInEvent(event);
 			g_index = g_drawKlinesObject.findKLineNode(touchePoint);
-			g_index = g_index < 0 ? g_drawKlinesObject.priceDatas.length : g_index;
-			//function(touchePoint,klineIndex,klineWidth,space)
+			g_index = g_index < 0 ? g_drawKlinesObject.priceDatas.length/2 : g_index;
+			
 			g_lastTouchePoint = g_crossObject.drawCross( touchePoint,g_index,g_drawKlinesObject.klineWidth,g_drawKlinesObject.space);
 		}
 		else
@@ -341,15 +341,18 @@
 		{
 			touchePoint.x = g_lastTouchePoint.x;
 			//alert(touchePoint.y + "  "+ g_drawKlinesObject.maxHeightPoint);
-
-			//对y进行限制
 			if(touchePoint.y<g_drawKlinesObject.maxHeightPoint)
 			{
-				alert("ss");
+				touchePoint.y = g_drawKlinesObject.maxHeightPoint;
+			}
+			if(touchePoint.y>g_drawKlinesObject.minilowPoint)
+			{
+				touchePoint.y = g_drawKlinesObject.minilowPoint;
+
 			}
 			//touchePoint.y = touchePoint.y < g_drawKlinesObject.maxHeightPoint?g_drawKlinesObject.maxHeightPoint:touchePoint.y;
-			alert(touchePoint.y + "  "+ g_drawKlinesObject.maxHeightPoint);
 			//touchePoint.y = touchePoint.y > g_drawKlinesObject.minilowPoint?g_drawKlinesObject.minilowPoint:touchePoint.y;
+
 			g_lastTouchePoint = g_crossObject.drawCross( touchePoint,g_index,g_drawKlinesObject.klineWidth,g_drawKlinesObject.space);
 		}
 	}
